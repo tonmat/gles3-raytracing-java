@@ -1,38 +1,19 @@
 package com.tonmatsu.gles3raytracing.core;
 
-import com.tonmatsu.gles3raytracing.commons.Ticker;
-import com.tonmatsu.gles3raytracing.gles.ShaderProgram;
-import com.tonmatsu.gles3raytracing.gles.ShaderStorageBuffer;
-import com.tonmatsu.gles3raytracing.gles.Texture;
-import com.tonmatsu.gles3raytracing.gles.VertexArray;
-import com.tonmatsu.gles3raytracing.gles.VertexBuffer;
-import com.tonmatsu.gles3raytracing.utils.BufferUtils;
+import com.tonmatsu.gles3raytracing.commons.*;
+import com.tonmatsu.gles3raytracing.gles.*;
+import com.tonmatsu.gles3raytracing.utils.*;
 
-import org.joml.Vector2i;
+import org.joml.*;
 
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
+import java.nio.*;
 
-import static android.opengl.GLES31.GL_COLOR_BUFFER_BIT;
-import static android.opengl.GLES31.GL_COMPUTE_SHADER;
-import static android.opengl.GLES31.GL_FRAGMENT_SHADER;
-import static android.opengl.GLES31.GL_RGBA16F;
-import static android.opengl.GLES31.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
-import static android.opengl.GLES31.GL_SHADER_STORAGE_BARRIER_BIT;
-import static android.opengl.GLES31.GL_STATIC_DRAW;
-import static android.opengl.GLES31.GL_TRIANGLES;
-import static android.opengl.GLES31.GL_VERTEX_SHADER;
-import static android.opengl.GLES31.GL_WRITE_ONLY;
-import static android.opengl.GLES31.glClear;
-import static android.opengl.GLES31.glClearColor;
-import static android.opengl.GLES31.glDispatchCompute;
-import static android.opengl.GLES31.glDrawArrays;
-import static android.opengl.GLES31.glMemoryBarrier;
-import static android.opengl.GLES31.glViewport;
-import static com.tonmatsu.gles3raytracing.gles.VertexArrayAttribute.vec2;
+import static android.opengl.GLES31.*;
+import static com.tonmatsu.gles3raytracing.gles.VertexArrayAttribute.*;
 
 public class Scene {
     private final Vector2i viewport = new Vector2i();
+    private final Matrix4f view = new Matrix4f();
 
     private ShaderStorageBuffer primitivesBuffer;
     private ShaderStorageBuffer lightsBuffer;
@@ -55,6 +36,10 @@ public class Scene {
         createSimpleShaderProgram();
 
         glClearColor(0.1f, 0.12f, 0.14f, 1.0f);
+    }
+
+    public void onRotationMatrixChanged(Matrix4f rotation) {
+        this.view.set(rotation);
     }
 
     public void onUpdate(Ticker ticker) {
@@ -172,6 +157,7 @@ public class Scene {
 
     private void renderRayTracingShaderProgram() {
         rayTracingShaderProgram.bind();
+        rayTracingShaderProgram.setUniformMatrix4f("u_view", view);
         glDispatchCompute(viewport.x / 8, viewport.y / 8, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         rayTracingShaderProgram.unbind();

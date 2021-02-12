@@ -17,14 +17,14 @@ public final class BufferUtils {
     public static FloatBuffer allocFloats(int capacity) {
         return allocBytes(capacity * 4).asFloatBuffer();
     }
-    
-    public static IntBuffer ints(int ... i) {
+
+    public static IntBuffer ints(int... i) {
         final IntBuffer buffer = allocInts(i.length);
         buffer.put(i).flip();
         return buffer;
     }
-    
-    public static FloatBuffer floats(float ... f) {
+
+    public static FloatBuffer floats(float... f) {
         final FloatBuffer buffer = allocFloats(f.length);
         buffer.put(f).flip();
         return buffer;

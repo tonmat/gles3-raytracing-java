@@ -7,10 +7,10 @@ import android.util.*;
 import java.io.*;
 
 public final class AssetUtils {
+    private static AssetManager assetManager;
+
     private AssetUtils() {
     }
-
-    private static AssetManager assetManager;
 
     public static void initialize(Context context) {
         assetManager = context.getAssets();

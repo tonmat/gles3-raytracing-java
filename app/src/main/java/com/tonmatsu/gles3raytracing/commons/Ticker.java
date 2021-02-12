@@ -1,10 +1,9 @@
 package com.tonmatsu.gles3raytracing.commons;
 
 public class Ticker {
+    private final Metric deltaMetric = new Metric(60);
     public float delta;
     public float elapsedTime;
-    private final Metric deltaMetric = new Metric(60);
-
     private long lastTickTime;
 
     public void tick() {

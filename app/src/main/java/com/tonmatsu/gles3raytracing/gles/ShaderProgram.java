@@ -111,7 +111,7 @@ public class ShaderProgram {
     }
 
     public void setUniformMatrix4f(String name, Matrix4f mat4) {
-        glProgramUniformMatrix3fv(program, getUniformLocation(name), 1, false, mat4.get(tempBuffer));
+        glProgramUniformMatrix4fv(program, getUniformLocation(name), 1, false, mat4.get(tempBuffer));
         tempBuffer.clear();
     }
 }

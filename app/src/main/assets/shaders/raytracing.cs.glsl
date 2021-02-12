@@ -43,6 +43,7 @@ layout (std430, binding = 2) readonly buffer Lights {
     int lights_length;
     Light lights[];
 };
+uniform mat4 u_view;
 
 Hit hit_sphere(Ray ray, Primitive sphere) {
     Hit hit;
@@ -209,8 +210,10 @@ void main() {
     pos.x *= ratio;
     pos.y = -pos.y;
 
-    vec3 ray_dir = normalize(vec3(pos, 4.0));
-    vec3 color = cast_primary_ray(Ray(vec3(0.0), ray_dir));
+    Ray ray;
+    ray.pos = (u_view * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    ray.dir = normalize((u_view * vec4(vec3(pos, 4.0), 0.0)).xyz);
+    vec3 color = cast_primary_ray(ray);
     vec4 pix = vec4(color, 1.0);
 
     imageStore(u_img, pixcoords, pix);
