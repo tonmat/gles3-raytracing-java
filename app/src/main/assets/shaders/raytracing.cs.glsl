@@ -1,8 +1,9 @@
 #version 310 es
 precision highp image2D;
 
-#define SPHERE 1
-#define BOX    2
+#define EPSILON 1e-3
+#define SPHERE  1
+#define BOX     2
 
 struct Primitive {
     int type;
@@ -151,24 +152,37 @@ Hit cast_ray(Ray ray) {
     return hit;
 }
 
-vec3 cast_primary_ray(Ray ray) {
+vec3 cast_shadow_ray(vec3 ray_pos, vec3 normal) {
+    Ray ray = Ray(vec3(ray_pos), vec3(0.0));
+    vec3 color = vec3(0.0);
+    for (int i = 0; i < lights_length; i++) {
+        Light light = lights[i];
+        vec3 light_pos = vec3(light.pos[0], light.pos[1], light.pos[2]);
+        vec3 light_color = vec3(light.color[0], light.color[1], light.color[2]);
+        ray.dir = light_pos - ray.pos;
+        float distance = length(ray.dir);
+        ray.dir = normalize(ray.dir);
+        float attenuation = 1.0 / (1.0 + light.attenuation[0] * distance + light.attenuation[1] * distance * distance);
+        color += 0.01 * light_color * attenuation;
+        Hit hit = cast_ray(ray);
+        if (hit.t < 0.0) {
+            float lambert = max(dot(ray.dir, normal), 0.0);
+            if (lambert > 0.0)
+                color += light_color * attenuation * lambert;
+        }
+    }
+    return color;
+}
+
+vec3 cast_primary_ray(vec3 ray_dir) {
+    Ray ray = Ray(vec3(0.0), ray_dir);
     vec3 color = vec3(0.0);
     while (true) {
         Hit hit = cast_ray(ray);
         if (hit.t >= 0.0) {
             vec3 primitive_color = vec3(hit.primitive.color[0], hit.primitive.color[1], hit.primitive.color[2]);
-            for (int i = 0; i < lights_length; i++) {
-                Light light = lights[i];
-                vec3 light_pos = vec3(light.pos[0], light.pos[1], light.pos[2]);
-                vec3 light_dir = normalize(light_pos - hit.pos);
-                float lambertian = max(dot(light_dir, hit.normal), 0.0);
-                if (lambertian > 0.0) {
-                    vec3 light_color = vec3(light.color[0], light.color[1], light.color[2]);
-                    vec3 diffuse_color = primitive_color * light_color * lambertian;
-                    float attenuation = 1.0 / (1.0 + light.attenuation[0] * hit.t + light.attenuation[1] * hit.t * hit.t);
-                    color += diffuse_color * attenuation;
-                }
-            }
+            vec3 shadow_color = cast_shadow_ray(hit.pos - EPSILON * ray.dir, hit.normal);
+            color = primitive_color * shadow_color;
         }
         break;
     }
@@ -183,10 +197,8 @@ void main() {
     pos.x *= ratio;
     pos.y = -pos.y;
 
-    Ray ray;
-    ray.pos = vec3(0.0);
-    ray.dir = normalize(vec3(pos, -4.0));
-    vec3 color = cast_primary_ray(ray);
+    vec3 ray_direction = normalize(vec3(pos, 4.0));
+    vec3 color = cast_primary_ray(ray_direction);
     vec4 pix = vec4(color, 1.0);
 
     imageStore(u_img, pixcoords, pix);

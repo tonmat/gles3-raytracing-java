@@ -60,21 +60,21 @@ public class Scene {
         data.putInt(3);
 
         data.putInt(1);
-        data.putFloat(-2.0f).putFloat(0.0f).putFloat(-8.0f);
+        data.putFloat(-2.0f).putFloat(0.0f).putFloat(8.0f);
         data.putFloat(1.0f).putFloat(1.0f).putFloat(1.0f);
         data.putFloat(1.0f).putFloat(0.0f).putFloat(0.0f);
         data.putFloat(0.5f);
         data.putFloat(0.0f);
 
         data.putInt(1);
-        data.putFloat(0.0f).putFloat(0.0f).putFloat(-8.0f);
+        data.putFloat(0.0f).putFloat(0.0f).putFloat(8.0f);
         data.putFloat(1.0f).putFloat(1.0f).putFloat(1.0f);
         data.putFloat(0.0f).putFloat(1.0f).putFloat(0.0f);
         data.putFloat(0.5f);
         data.putFloat(0.0f);
 
         data.putInt(1);
-        data.putFloat(2.0f).putFloat(0.0f).putFloat(-8.0f);
+        data.putFloat(2.0f).putFloat(0.0f).putFloat(8.0f);
         data.putFloat(1.0f).putFloat(1.0f).putFloat(1.0f);
         data.putFloat(0.0f).putFloat(0.0f).putFloat(1.0f);
         data.putFloat(0.5f);
@@ -92,11 +92,11 @@ public class Scene {
 
         data.putInt(2);
 
-        data.putFloat(-16.0f).putFloat(8.0f).putFloat(8.0f);
+        data.putFloat(-8.0f).putFloat(4.0f).putFloat(4.0f);
         data.putFloat(0.9f).putFloat(0.5f).putFloat(0.1f);
         data.putFloat(0.09f).putFloat(0.032f);
 
-        data.putFloat(16.0f).putFloat(8.0f).putFloat(8.0f);
+        data.putFloat(8.0f).putFloat(4.0f).putFloat(4.0f);
         data.putFloat(0.1f).putFloat(0.5f).putFloat(0.9f);
         data.putFloat(0.09f).putFloat(0.032f);
 
