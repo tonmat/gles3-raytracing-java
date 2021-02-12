@@ -1,15 +1,35 @@
 package com.tonmatsu.gles3raytracing.core;
 
-import com.tonmatsu.gles3raytracing.commons.*;
-import com.tonmatsu.gles3raytracing.gles.*;
-import com.tonmatsu.gles3raytracing.utils.*;
+import com.tonmatsu.gles3raytracing.commons.Ticker;
+import com.tonmatsu.gles3raytracing.gles.ShaderProgram;
+import com.tonmatsu.gles3raytracing.gles.ShaderStorageBuffer;
+import com.tonmatsu.gles3raytracing.gles.Texture;
+import com.tonmatsu.gles3raytracing.gles.VertexArray;
+import com.tonmatsu.gles3raytracing.gles.VertexBuffer;
+import com.tonmatsu.gles3raytracing.utils.BufferUtils;
 
-import org.joml.*;
+import org.joml.Vector2i;
 
-import java.nio.*;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 
-import static android.opengl.GLES31.*;
-import static com.tonmatsu.gles3raytracing.gles.VertexArrayAttribute.*;
+import static android.opengl.GLES31.GL_COLOR_BUFFER_BIT;
+import static android.opengl.GLES31.GL_COMPUTE_SHADER;
+import static android.opengl.GLES31.GL_FRAGMENT_SHADER;
+import static android.opengl.GLES31.GL_RGBA16F;
+import static android.opengl.GLES31.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
+import static android.opengl.GLES31.GL_SHADER_STORAGE_BARRIER_BIT;
+import static android.opengl.GLES31.GL_STATIC_DRAW;
+import static android.opengl.GLES31.GL_TRIANGLES;
+import static android.opengl.GLES31.GL_VERTEX_SHADER;
+import static android.opengl.GLES31.GL_WRITE_ONLY;
+import static android.opengl.GLES31.glClear;
+import static android.opengl.GLES31.glClearColor;
+import static android.opengl.GLES31.glDispatchCompute;
+import static android.opengl.GLES31.glDrawArrays;
+import static android.opengl.GLES31.glMemoryBarrier;
+import static android.opengl.GLES31.glViewport;
+import static com.tonmatsu.gles3raytracing.gles.VertexArrayAttribute.vec2;
 
 public class Scene {
     private final Vector2i viewport = new Vector2i();
@@ -60,24 +80,24 @@ public class Scene {
         data.putInt(3);
 
         data.putInt(1);
-        data.putFloat(-2.0f).putFloat(0.0f).putFloat(8.0f);
+        data.putFloat(-2.0f).putFloat(-0.1f).putFloat(7.0f);
         data.putFloat(1.0f).putFloat(1.0f).putFloat(1.0f);
-        data.putFloat(1.0f).putFloat(0.0f).putFloat(0.0f);
-        data.putFloat(0.5f);
+        data.putFloat(1.0f).putFloat(0.1f).putFloat(0.1f);
+        data.putFloat(0.9f);
         data.putFloat(0.0f);
 
         data.putInt(1);
         data.putFloat(0.0f).putFloat(0.0f).putFloat(8.0f);
         data.putFloat(1.0f).putFloat(1.0f).putFloat(1.0f);
-        data.putFloat(0.0f).putFloat(1.0f).putFloat(0.0f);
-        data.putFloat(0.5f);
+        data.putFloat(0.1f).putFloat(1.0f).putFloat(0.1f);
+        data.putFloat(0.9f);
         data.putFloat(0.0f);
 
         data.putInt(1);
-        data.putFloat(2.0f).putFloat(0.0f).putFloat(8.0f);
+        data.putFloat(2.0f).putFloat(0.1f).putFloat(9.0f);
         data.putFloat(1.0f).putFloat(1.0f).putFloat(1.0f);
-        data.putFloat(0.0f).putFloat(0.0f).putFloat(1.0f);
-        data.putFloat(0.5f);
+        data.putFloat(0.1f).putFloat(0.1f).putFloat(1.0f);
+        data.putFloat(0.9f);
         data.putFloat(0.0f);
 
         data.flip();
@@ -88,12 +108,16 @@ public class Scene {
     }
 
     private void createLightsBuffer() {
-        final ByteBuffer data = BufferUtils.allocBytes(8 * 4 * 2 + 4);
+        final ByteBuffer data = BufferUtils.allocBytes(8 * 4 * 3 + 4);
 
-        data.putInt(2);
+        data.putInt(3);
 
         data.putFloat(-8.0f).putFloat(4.0f).putFloat(4.0f);
         data.putFloat(0.9f).putFloat(0.5f).putFloat(0.1f);
+        data.putFloat(0.09f).putFloat(0.032f);
+
+        data.putFloat(0.0f).putFloat(8.0f).putFloat(4.0f);
+        data.putFloat(0.9f).putFloat(0.9f).putFloat(0.9f);
         data.putFloat(0.09f).putFloat(0.032f);
 
         data.putFloat(8.0f).putFloat(4.0f).putFloat(4.0f);
