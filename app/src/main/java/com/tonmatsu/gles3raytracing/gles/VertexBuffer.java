@@ -29,9 +29,9 @@ public class VertexBuffer {
         binded = null;
     }
 
-    public void update(FloatBuffer buffer) {
+    public void update(FloatBuffer data) {
         bind();
-        glBufferSubData(GL_ARRAY_BUFFER, 0, buffer.limit() * 4, buffer);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, data.limit() * 4, data);
         unbind();
     }
 }

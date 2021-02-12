@@ -6,12 +6,16 @@ import com.tonmatsu.gles3raytracing.utils.*;
 
 import org.joml.*;
 
+import java.nio.*;
+
 import static android.opengl.GLES31.*;
 import static com.tonmatsu.gles3raytracing.gles.VertexArrayAttribute.*;
 
 public class Scene {
     private final Vector2i viewport = new Vector2i();
 
+    private ShaderStorageBuffer primitivesBuffer;
+    private ShaderStorageBuffer lightsBuffer;
     private Texture rayTracingTexture;
     private ShaderProgram rayTracingShaderProgram;
 
@@ -20,6 +24,9 @@ public class Scene {
     private ShaderProgram simpleShaderProgram;
 
     public void onCreate() {
+        createPrimitivesBuffer();
+        createLightsBuffer();
+
         createRayTracingTexture();
         createRayTracingShaderProgram();
 
@@ -47,6 +54,59 @@ public class Scene {
         renderSimpleShaderProgram();
     }
 
+    private void createPrimitivesBuffer() {
+        final ByteBuffer data = BufferUtils.allocBytes(12 * 4 * 3 + 4);
+
+        data.putInt(3);
+
+        data.putInt(1);
+        data.putFloat(-2.0f).putFloat(0.0f).putFloat(-8.0f);
+        data.putFloat(1.0f).putFloat(1.0f).putFloat(1.0f);
+        data.putFloat(1.0f).putFloat(0.0f).putFloat(0.0f);
+        data.putFloat(0.5f);
+        data.putFloat(0.0f);
+
+        data.putInt(1);
+        data.putFloat(0.0f).putFloat(0.0f).putFloat(-8.0f);
+        data.putFloat(1.0f).putFloat(1.0f).putFloat(1.0f);
+        data.putFloat(0.0f).putFloat(1.0f).putFloat(0.0f);
+        data.putFloat(0.5f);
+        data.putFloat(0.0f);
+
+        data.putInt(1);
+        data.putFloat(2.0f).putFloat(0.0f).putFloat(-8.0f);
+        data.putFloat(1.0f).putFloat(1.0f).putFloat(1.0f);
+        data.putFloat(0.0f).putFloat(0.0f).putFloat(1.0f);
+        data.putFloat(0.5f);
+        data.putFloat(0.0f);
+
+        data.flip();
+
+        primitivesBuffer = new ShaderStorageBuffer(data.limit(), GL_STATIC_DRAW);
+        primitivesBuffer.update(data);
+        primitivesBuffer.bindBufferBase(1);
+    }
+
+    private void createLightsBuffer() {
+        final ByteBuffer data = BufferUtils.allocBytes(8 * 4 * 2 + 4);
+
+        data.putInt(2);
+
+        data.putFloat(-16.0f).putFloat(8.0f).putFloat(8.0f);
+        data.putFloat(0.9f).putFloat(0.5f).putFloat(0.1f);
+        data.putFloat(0.09f).putFloat(0.032f);
+
+        data.putFloat(16.0f).putFloat(8.0f).putFloat(8.0f);
+        data.putFloat(0.1f).putFloat(0.5f).putFloat(0.9f);
+        data.putFloat(0.09f).putFloat(0.032f);
+
+        data.flip();
+
+        lightsBuffer = new ShaderStorageBuffer(data.limit(), GL_STATIC_DRAW);
+        lightsBuffer.update(data);
+        lightsBuffer.bindBufferBase(2);
+    }
+
     private void createRayTracingTexture() {
         rayTracingTexture = new Texture();
     }
@@ -67,15 +127,16 @@ public class Scene {
     }
 
     private void createSimpleVertexBuffer() {
-        simpleVertexBuffer = new VertexBuffer(6 * 4 * 4, GL_STATIC_DRAW);
-        simpleVertexBuffer.update(BufferUtils.floats(
+        final FloatBuffer data = BufferUtils.floats(
                 -1, -1, 0, 1,
                 +1, -1, 1, 1,
                 +1, +1, 1, 0,
 
                 +1, +1, 1, 0,
                 -1, +1, 0, 0,
-                -1, -1, 0, 1));
+                -1, -1, 0, 1);
+        simpleVertexBuffer = new VertexBuffer(data.limit() * 4, GL_STATIC_DRAW);
+        simpleVertexBuffer.update(data);
     }
 
     private void createSimpleVertexArray() {
@@ -88,7 +149,7 @@ public class Scene {
     private void renderRayTracingShaderProgram() {
         rayTracingShaderProgram.bind();
         glDispatchCompute(viewport.x / 8, viewport.y / 8, 1);
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         rayTracingShaderProgram.unbind();
     }
 
