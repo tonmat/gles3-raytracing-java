@@ -34,6 +34,11 @@ public class SurfaceView extends GLSurfaceView {
             private final float[] r = new float[16];
             private final float[] rm = new float[16];
             private final Matrix4f rotationMatrix = new Matrix4f();
+            private final Matrix4f fixedRotationMatrix = new Matrix4f();
+
+            {
+                fixedRotationMatrix.rotateX(3.14159265358979323846f / 2.0f);
+            }
 
             @Override
             public void onSensorChanged(SensorEvent event) {
@@ -47,6 +52,7 @@ public class SurfaceView extends GLSurfaceView {
                         rm[1], rm[5], rm[9], rm[13],
                         rm[2], rm[6], rm[10], rm[14],
                         rm[3], rm[7], rm[11], rm[15]);
+                fixedRotationMatrix.mul(rotationMatrix, rotationMatrix);
                 scene.onRotationMatrixChanged(rotationMatrix);
             }
 
