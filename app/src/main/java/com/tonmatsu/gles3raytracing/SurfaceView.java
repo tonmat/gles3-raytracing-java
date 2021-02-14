@@ -37,7 +37,8 @@ public class SurfaceView extends GLSurfaceView {
             private final Matrix4f fixedRotationMatrix = new Matrix4f();
 
             {
-                fixedRotationMatrix.rotateX(3.14159265358979323846f / 2.0f);
+                fixedRotationMatrix.rotateX(-3.14159265358979323846f / 2.0f);
+                fixedRotationMatrix.rotateY(3.14159265358979323846f);
             }
 
             @Override
@@ -59,7 +60,7 @@ public class SurfaceView extends GLSurfaceView {
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {
             }
-        }, rotationVectorSensor, SensorManager.SENSOR_DELAY_GAME);
+        }, rotationVectorSensor, SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     private void handleTimer(int id) {
