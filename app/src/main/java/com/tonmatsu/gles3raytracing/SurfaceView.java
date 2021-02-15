@@ -1,16 +1,23 @@
 package com.tonmatsu.gles3raytracing;
 
-import android.content.*;
-import android.hardware.*;
-import android.opengl.*;
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.opengl.GLSurfaceView;
+import android.view.MotionEvent;
+import android.view.View;
 
-import com.tonmatsu.gles3raytracing.commons.*;
-import com.tonmatsu.gles3raytracing.core.*;
+import com.tonmatsu.gles3raytracing.commons.Ticker;
+import com.tonmatsu.gles3raytracing.commons.Timer;
+import com.tonmatsu.gles3raytracing.core.Scene;
 
-import org.joml.*;
+import org.joml.Quaternionf;
+import org.joml.Vector2f;
 
 import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.*;
+import javax.microedition.khronos.opengles.GL10;
 
 public class SurfaceView extends GLSurfaceView {
     private final Callback callback;
@@ -29,38 +36,31 @@ public class SurfaceView extends GLSurfaceView {
         setRenderMode(RENDERMODE_CONTINUOUSLY);
 
         final SensorManager sensorManager = context.getSystemService(SensorManager.class);
-        final Sensor rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+        final Sensor rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
         sensorManager.registerListener(new SensorEventListener() {
-            private final float[] r = new float[16];
-            private final float[] rm = new float[16];
-            private final Matrix4f rotationMatrix = new Matrix4f();
-            private final Matrix4f fixedRotationMatrix = new Matrix4f();
-
-            {
-                fixedRotationMatrix.rotateX(-3.14159265358979323846f / 2.0f);
-                fixedRotationMatrix.rotateY(3.14159265358979323846f);
-            }
+            private final Quaternionf rotation = new Quaternionf();
 
             @Override
             public void onSensorChanged(SensorEvent event) {
-                SensorManager.getRotationMatrixFromVector(r, event.values);
-                SensorManager.remapCoordinateSystem(r,
-                        SensorManager.AXIS_MINUS_Y,
-                        SensorManager.AXIS_X,
-                        rm);
-                rotationMatrix.set(
-                        rm[0], rm[4], rm[8], rm[12],
-                        rm[1], rm[5], rm[9], rm[13],
-                        rm[2], rm[6], rm[10], rm[14],
-                        rm[3], rm[7], rm[11], rm[15]);
-                fixedRotationMatrix.mul(rotationMatrix, rotationMatrix);
-                scene.onRotationMatrixChanged(rotationMatrix);
+                rotation.set(event.values[1], -event.values[0], event.values[2], event.values[3]);
+                scene.onRotationChanged(rotation);
             }
 
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {
             }
-        }, rotationVectorSensor, SensorManager.SENSOR_DELAY_FASTEST);
+        }, rotationVectorSensor, SensorManager.SENSOR_DELAY_GAME);
+
+        setOnTouchListener(new OnTouchListener() {
+            private final Vector2f position = new Vector2f();
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                position.set(event.getX(), event.getY());
+                scene.onTouch(event);
+                return true;
+            }
+        });
     }
 
     private void handleTimer(int id) {

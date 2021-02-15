@@ -1,19 +1,50 @@
 package com.tonmatsu.gles3raytracing.core;
 
-import com.tonmatsu.gles3raytracing.commons.*;
-import com.tonmatsu.gles3raytracing.gles.*;
-import com.tonmatsu.gles3raytracing.utils.*;
+import android.view.MotionEvent;
 
-import org.joml.*;
+import com.tonmatsu.gles3raytracing.commons.Ticker;
+import com.tonmatsu.gles3raytracing.gles.ShaderProgram;
+import com.tonmatsu.gles3raytracing.gles.ShaderStorageBuffer;
+import com.tonmatsu.gles3raytracing.gles.Texture;
+import com.tonmatsu.gles3raytracing.gles.VertexArray;
+import com.tonmatsu.gles3raytracing.gles.VertexBuffer;
+import com.tonmatsu.gles3raytracing.utils.BufferUtils;
 
-import java.nio.*;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector2f;
+import org.joml.Vector2i;
+import org.joml.Vector3f;
 
-import static android.opengl.GLES31.*;
-import static com.tonmatsu.gles3raytracing.gles.VertexArrayAttribute.*;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+
+import static android.opengl.GLES31.GL_COLOR_BUFFER_BIT;
+import static android.opengl.GLES31.GL_COMPUTE_SHADER;
+import static android.opengl.GLES31.GL_FRAGMENT_SHADER;
+import static android.opengl.GLES31.GL_RGBA16F;
+import static android.opengl.GLES31.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
+import static android.opengl.GLES31.GL_SHADER_STORAGE_BARRIER_BIT;
+import static android.opengl.GLES31.GL_STATIC_DRAW;
+import static android.opengl.GLES31.GL_TRIANGLES;
+import static android.opengl.GLES31.GL_VERTEX_SHADER;
+import static android.opengl.GLES31.GL_WRITE_ONLY;
+import static android.opengl.GLES31.glClear;
+import static android.opengl.GLES31.glClearColor;
+import static android.opengl.GLES31.glDispatchCompute;
+import static android.opengl.GLES31.glDrawArrays;
+import static android.opengl.GLES31.glMemoryBarrier;
+import static android.opengl.GLES31.glViewport;
+import static com.tonmatsu.gles3raytracing.gles.VertexArrayAttribute.vec2;
 
 public class Scene {
     private final Vector2i viewport = new Vector2i();
+    private final Quaternionf rotation = new Quaternionf();
+    private final Vector2f velocity = new Vector2f();
+    private final Vector3f position = new Vector3f();
     private final Matrix4f view = new Matrix4f();
+    private final Vector3f forward = new Vector3f();
+    private final Vector3f right = new Vector3f();
 
     private ShaderStorageBuffer primitivesBuffer;
     private ShaderStorageBuffer lightsBuffer;
@@ -38,11 +69,50 @@ public class Scene {
         glClearColor(0.1f, 0.12f, 0.14f, 1.0f);
     }
 
-    public void onRotationMatrixChanged(Matrix4f rotation) {
-        this.view.set(rotation);
+    public void onRotationChanged(Quaternionf rotation) {
+        synchronized (this.rotation) {
+            this.rotation.identity()
+                    .rotation(
+                            3.14159265358979323846f / 2.0f,
+                            0.0f,
+                            0.0f)
+                    .mul(rotation);
+        }
+    }
+
+    public void onTouch(MotionEvent event) {
+        synchronized (velocity) {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_MOVE:
+                    this.velocity.x = (2.0f * event.getX() - viewport.x) / viewport.x;
+                    this.velocity.y = -(2.0f * event.getY() - viewport.y) / viewport.y;
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    this.velocity.zero();
+                    break;
+            }
+        }
     }
 
     public void onUpdate(Ticker ticker) {
+        view.positiveZ(forward);
+        view.positiveX(right);
+        synchronized (velocity) {
+            final float f = velocity.y;
+            final float r = velocity.x;
+            if (Math.abs(f) > 0.2f)
+                this.position.fma(10.0f * f * ticker.delta, forward);
+            if (Math.abs(r) > 0.2f)
+                this.position.fma(5.0f * r * ticker.delta, right);
+        }
+
+        this.view.identity();
+        synchronized (rotation) {
+            this.view.rotate(rotation);
+        }
+        this.view.translate(position);
     }
 
     public void onViewportResized(int width, int height) {
