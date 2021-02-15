@@ -1,23 +1,17 @@
 package com.tonmatsu.gles3raytracing;
 
-import android.content.Context;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
-import android.opengl.GLSurfaceView;
-import android.view.MotionEvent;
-import android.view.View;
+import android.content.*;
+import android.hardware.*;
+import android.opengl.*;
+import android.view.*;
 
-import com.tonmatsu.gles3raytracing.commons.Ticker;
-import com.tonmatsu.gles3raytracing.commons.Timer;
-import com.tonmatsu.gles3raytracing.core.Scene;
+import com.tonmatsu.gles3raytracing.commons.*;
+import com.tonmatsu.gles3raytracing.core.*;
 
-import org.joml.Quaternionf;
-import org.joml.Vector2f;
+import org.joml.*;
 
 import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
+import javax.microedition.khronos.opengles.*;
 
 public class SurfaceView extends GLSurfaceView {
     private final Callback callback;
@@ -38,11 +32,13 @@ public class SurfaceView extends GLSurfaceView {
         final SensorManager sensorManager = context.getSystemService(SensorManager.class);
         final Sensor rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
         sensorManager.registerListener(new SensorEventListener() {
+            private final float[] q = new float[4];
             private final Quaternionf rotation = new Quaternionf();
 
             @Override
             public void onSensorChanged(SensorEvent event) {
-                rotation.set(event.values[1], -event.values[0], event.values[2], event.values[3]);
+                SensorManager.getQuaternionFromVector(q, event.values);
+                rotation.set(q[2], -q[1], q[3], q[0]);
                 scene.onRotationChanged(rotation);
             }
 

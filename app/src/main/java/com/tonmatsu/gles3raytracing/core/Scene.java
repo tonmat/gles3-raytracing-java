@@ -1,41 +1,19 @@
 package com.tonmatsu.gles3raytracing.core;
 
-import android.view.MotionEvent;
+import android.view.*;
 
-import com.tonmatsu.gles3raytracing.commons.Ticker;
-import com.tonmatsu.gles3raytracing.gles.ShaderProgram;
-import com.tonmatsu.gles3raytracing.gles.ShaderStorageBuffer;
-import com.tonmatsu.gles3raytracing.gles.Texture;
-import com.tonmatsu.gles3raytracing.gles.VertexArray;
-import com.tonmatsu.gles3raytracing.gles.VertexBuffer;
-import com.tonmatsu.gles3raytracing.utils.BufferUtils;
+import com.tonmatsu.gles3raytracing.commons.*;
+import com.tonmatsu.gles3raytracing.gles.*;
+import com.tonmatsu.gles3raytracing.utils.*;
 
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector2f;
-import org.joml.Vector2i;
-import org.joml.Vector3f;
+import org.joml.*;
 
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
+import java.nio.*;
 
-import static android.opengl.GLES31.GL_COLOR_BUFFER_BIT;
-import static android.opengl.GLES31.GL_COMPUTE_SHADER;
-import static android.opengl.GLES31.GL_FRAGMENT_SHADER;
-import static android.opengl.GLES31.GL_RGBA16F;
-import static android.opengl.GLES31.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
-import static android.opengl.GLES31.GL_SHADER_STORAGE_BARRIER_BIT;
-import static android.opengl.GLES31.GL_STATIC_DRAW;
-import static android.opengl.GLES31.GL_TRIANGLES;
-import static android.opengl.GLES31.GL_VERTEX_SHADER;
-import static android.opengl.GLES31.GL_WRITE_ONLY;
-import static android.opengl.GLES31.glClear;
-import static android.opengl.GLES31.glClearColor;
-import static android.opengl.GLES31.glDispatchCompute;
-import static android.opengl.GLES31.glDrawArrays;
-import static android.opengl.GLES31.glMemoryBarrier;
-import static android.opengl.GLES31.glViewport;
-import static com.tonmatsu.gles3raytracing.gles.VertexArrayAttribute.vec2;
+import static android.opengl.GLES31.*;
+import static com.tonmatsu.gles3raytracing.gles.VertexArrayAttribute.*;
+
+import java.lang.Math;
 
 public class Scene {
     private final Vector2i viewport = new Vector2i();
@@ -72,10 +50,7 @@ public class Scene {
     public void onRotationChanged(Quaternionf rotation) {
         synchronized (this.rotation) {
             this.rotation.identity()
-                    .rotation(
-                            3.14159265358979323846f / 2.0f,
-                            0.0f,
-                            0.0f)
+                    .rotationX(3.14159265358979323846f / 2.0f)
                     .mul(rotation);
         }
     }
@@ -97,8 +72,8 @@ public class Scene {
     }
 
     public void onUpdate(Ticker ticker) {
-        view.positiveZ(forward);
-        view.positiveX(right);
+        forward.set(0, 0, 1).mulDirection(view);
+        right.set(1, 0, 0).mulDirection(view);
         synchronized (velocity) {
             final float f = velocity.y;
             final float r = velocity.x;
@@ -109,10 +84,10 @@ public class Scene {
         }
 
         this.view.identity();
+        this.view.translate(position);
         synchronized (rotation) {
             this.view.rotate(rotation);
         }
-        this.view.translate(position);
     }
 
     public void onViewportResized(int width, int height) {
