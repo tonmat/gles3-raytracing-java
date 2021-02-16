@@ -81,9 +81,9 @@ public class Scene {
             final float f = velocity.y;
             final float r = velocity.x;
             if (Math.abs(f) > 0.2f)
-                this.position.fma(10.0f * f * ticker.delta, forward);
+                this.position.fma(32.0f * f * ticker.delta, forward);
             if (Math.abs(r) > 0.2f)
-                this.position.fma(5.0f * r * ticker.delta, right);
+                this.position.fma(8.0f * r * ticker.delta, right);
         }
 
         this.view.identity();
@@ -133,7 +133,7 @@ public class Scene {
         box1.reflection = 0.9f;
 
         final Box box2 = new Box();
-        box2.position.set(0.0f, 0.0f, 10.0f);
+        box2.position.set(0.0f, 0.0f, 20.0f);
         box2.size.set(10.0f, 10.0f, 1.0f);
         box2.color.set(0.0f, 0.0f, 0.0f);
         box2.reflection = 0.9f;
