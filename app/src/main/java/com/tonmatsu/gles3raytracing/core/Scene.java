@@ -6,6 +6,7 @@ import com.tonmatsu.gles3raytracing.commons.*;
 import com.tonmatsu.gles3raytracing.gles.*;
 import com.tonmatsu.gles3raytracing.utils.*;
 
+import org.joml.Math;
 import org.joml.*;
 
 import java.nio.*;
@@ -13,9 +14,8 @@ import java.nio.*;
 import static android.opengl.GLES31.*;
 import static com.tonmatsu.gles3raytracing.gles.VertexArrayAttribute.*;
 
-import java.lang.Math;
-
 public class Scene {
+    private static final int RESOLUTION = 2;
     private final Vector2i viewport = new Vector2i();
     private final Quaternionf rotation = new Quaternionf();
     private final Vector2f velocity = new Vector2f();
@@ -24,8 +24,11 @@ public class Scene {
     private final Vector3f forward = new Vector3f();
     private final Vector3f right = new Vector3f();
 
-    private ShaderStorageBuffer primitivesBuffer;
-    private ShaderStorageBuffer lightsBuffer;
+    private Sphere sphere;
+    private PrimitiveManager primitiveManager;
+    private Light light;
+    private LightManager lightManager;
+
     private Texture rayTracingTexture;
     private ShaderProgram rayTracingShaderProgram;
 
@@ -34,8 +37,8 @@ public class Scene {
     private ShaderProgram simpleShaderProgram;
 
     public void onCreate() {
-        createPrimitivesBuffer();
-        createLightsBuffer();
+        createPrimitiveManager();
+        createLightManager();
 
         createRayTracingTexture();
         createRayTracingShaderProgram();
@@ -88,12 +91,22 @@ public class Scene {
         synchronized (rotation) {
             this.view.rotate(rotation);
         }
+
+        //
+
+        light.position.x = (float) Math.sin(ticker.elapsedTime) * 10.0f;
+        light.position.z = (float) Math.cos(ticker.elapsedTime) * 10.0f;
+
+        sphere.position.y = (float) Math.sin(ticker.elapsedTime * 0.77f) * 2.0f;
+
+        lightManager.update();
+        primitiveManager.update();
     }
 
     public void onViewportResized(int width, int height) {
         glViewport(0, 0, width, height);
         viewport.set(width, height);
-        rayTracingTexture.setStorage(1, GL_RGBA16F, viewport.x, viewport.y);
+        rayTracingTexture.setStorage(1, GL_RGBA16F, viewport.x / RESOLUTION, viewport.y / RESOLUTION);
         rayTracingTexture.bindImageTexture(0, GL_WRITE_ONLY, GL_RGBA16F);
     }
 
@@ -104,61 +117,78 @@ public class Scene {
         renderSimpleShaderProgram();
     }
 
-    private void createPrimitivesBuffer() {
-        final ByteBuffer data = BufferUtils.allocBytes(12 * 4 * 3 + 4);
+    private void createPrimitiveManager() {
+        primitiveManager = new PrimitiveManager(6);
 
-        data.putInt(3);
+        final Box floor = new Box();
+        floor.position.set(0.0f, -2.0f, 0.0f);
+        floor.size.set(100.0f, 1.0f, 100.0f);
+        floor.color.set(1.0f, 1.0f, 1.0f);
+        floor.reflection = 0.1f;
 
-        data.putInt(1);
-        data.putFloat(-2.0f).putFloat(-0.1f).putFloat(7.0f);
-        data.putFloat(1.0f).putFloat(1.0f).putFloat(1.0f);
-        data.putFloat(1.0f).putFloat(0.1f).putFloat(0.1f);
-        data.putFloat(0.9f);
-        data.putFloat(0.0f);
+        final Box box1 = new Box();
+        box1.position.set(0.0f, 0.0f, -10.0f);
+        box1.size.set(10.0f, 10.0f, 1.0f);
+        box1.color.set(0.0f, 0.0f, 0.0f);
+        box1.reflection = 0.9f;
 
-        data.putInt(1);
-        data.putFloat(0.0f).putFloat(0.0f).putFloat(8.0f);
-        data.putFloat(1.0f).putFloat(1.0f).putFloat(1.0f);
-        data.putFloat(0.1f).putFloat(1.0f).putFloat(0.1f);
-        data.putFloat(0.9f);
-        data.putFloat(0.0f);
+        final Box box2 = new Box();
+        box2.position.set(0.0f, 0.0f, 10.0f);
+        box2.size.set(10.0f, 10.0f, 1.0f);
+        box2.color.set(0.0f, 0.0f, 0.0f);
+        box2.reflection = 0.9f;
 
-        data.putInt(1);
-        data.putFloat(2.0f).putFloat(0.1f).putFloat(9.0f);
-        data.putFloat(1.0f).putFloat(1.0f).putFloat(1.0f);
-        data.putFloat(0.1f).putFloat(0.1f).putFloat(1.0f);
-        data.putFloat(0.9f);
-        data.putFloat(0.0f);
+        final Sphere sphere1 = new Sphere();
+        sphere1.position.set(-2.0f, -0.1f, 7.0f);
+        sphere1.radius = 1.0f;
+        sphere1.color.set(1.0f, 0.1f, 0.1f);
+        sphere1.reflection = 0.5f;
 
-        data.flip();
+        final Sphere sphere2 = new Sphere();
+        sphere2.position.set(0.0f, 0.1f, 8.0f);
+        sphere2.radius = 1.0f;
+        sphere2.color.set(0.1f, 1.0f, 0.1f);
+        sphere2.reflection = 0.5f;
 
-        primitivesBuffer = new ShaderStorageBuffer(data.limit(), GL_STATIC_DRAW);
-        primitivesBuffer.update(data);
-        primitivesBuffer.bindBufferBase(1);
+        final Sphere sphere3 = new Sphere();
+        sphere3.position.set(2.0f, 0.1f, 9.0f);
+        sphere3.radius = 1.0f;
+        sphere3.color.set(0.1f, 0.1f, 0.9f);
+        sphere3.reflection = 0.5f;
+
+        sphere = sphere2;
+
+        primitiveManager.add(floor);
+        primitiveManager.add(box1);
+        primitiveManager.add(box2);
+        primitiveManager.add(sphere1);
+        primitiveManager.add(sphere2);
+        primitiveManager.add(sphere3);
     }
 
-    private void createLightsBuffer() {
-        final ByteBuffer data = BufferUtils.allocBytes(8 * 4 * 3 + 4);
+    private void createLightManager() {
+        lightManager = new LightManager(4);
 
-        data.putInt(3);
+        final Light light1 = new Light();
+        light1.position.set(-8.0f, 4.0f, 4.0f);
+        light1.color.set(0.9f, 0.5f, 0.1f);
+        light1.attenuation.set(0.09f, 0.032f);
 
-        data.putFloat(-8.0f).putFloat(4.0f).putFloat(4.0f);
-        data.putFloat(0.9f).putFloat(0.5f).putFloat(0.1f);
-        data.putFloat(0.09f).putFloat(0.032f);
+        final Light light2 = new Light();
+        light2.position.set(0.0f, 4.0f, 0.0f);
+        light2.color.set(0.9f, 0.9f, 0.9f);
+        light2.attenuation.set(0.09f, 0.032f);
 
-        data.putFloat(0.0f).putFloat(8.0f).putFloat(4.0f);
-        data.putFloat(0.9f).putFloat(0.9f).putFloat(0.9f);
-        data.putFloat(0.09f).putFloat(0.032f);
+        final Light light3 = new Light();
+        light3.position.set(8.0f, 4.0f, 4.0f);
+        light3.color.set(0.1f, 0.5f, 0.9f);
+        light3.attenuation.set(0.09f, 0.032f);
 
-        data.putFloat(8.0f).putFloat(4.0f).putFloat(4.0f);
-        data.putFloat(0.1f).putFloat(0.5f).putFloat(0.9f);
-        data.putFloat(0.09f).putFloat(0.032f);
+        light = light2;
 
-        data.flip();
-
-        lightsBuffer = new ShaderStorageBuffer(data.limit(), GL_STATIC_DRAW);
-        lightsBuffer.update(data);
-        lightsBuffer.bindBufferBase(2);
+        lightManager.add(light1);
+        lightManager.add(light2);
+        lightManager.add(light3);
     }
 
     private void createRayTracingTexture() {
@@ -203,7 +233,7 @@ public class Scene {
     private void renderRayTracingShaderProgram() {
         rayTracingShaderProgram.bind();
         rayTracingShaderProgram.setUniformMatrix4f("u_view", view);
-        glDispatchCompute(viewport.x / 8, viewport.y / 8, 1);
+        glDispatchCompute(viewport.x / (8 * RESOLUTION), viewport.y / (8 * RESOLUTION), 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         rayTracingShaderProgram.unbind();
     }
